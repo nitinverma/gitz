@@ -1,0 +1,99 @@
+#!/bin/bash
+
+curr_pwd=${PWD}
+cd $(dirname $0)
+script_pwd=${PWD}
+cd $curr_pwd
+
+. ${script_pwd}/../lib/$(basename $0)_functions
+
+usage() {
+cat >&2 << EOF
+    Normally run as
+    * gitz
+    * git z
+
+    Options:
+        tag
+            $ git z tag 
+            devtest 1
+            dev 3 2 1
+            testing 3 2
+        tag <base-tag>
+            $ git z tag testing
+            testing.3
+            testing.2
+        tag -a [-m <msg>] <base-tag>
+            $ git z tag -a testing -m 'testing tag'
+        tag -s [-m <msg>] <base-tag>
+            $ git z tag -s testing -m 'testing signed tag'
+
+EOF
+
+exit 1
+
+}
+
+
+OPTS=`getopt -o sham: -l help -- "$@"`
+if [ $? != 0 ]
+then
+    exit 1
+fi
+
+eval set -- "$OPTS"
+
+while true ; do
+    case "$1" in
+        -a) A_FLAG=1; shift;;
+        -s) S_FLAG=1; shift;;
+        -h) H_FLAG=1; shift;;
+        --help) H_FLAG=1; shift;;
+        -m) M_FLAG=1 M_VAL=$2; shift 2;;
+        --) shift; break;;
+    esac
+done
+
+if [ ! -s $H_FLAG ]
+then
+    usage
+fi
+
+## Validate base tag
+if [ ! -s $1 ] && [ $(validate_base_tag $1) -ne 1 ]
+then
+    echo "Not a valid base tag -- $1" >&2
+    exit 1
+fi
+## Exit if bad
+
+if [ ! -s $M_VAL ]
+then
+    COMMIT_COMMENT="-m $M_VAL"
+fi
+
+if [ -s $1 ]
+then
+    if [ -s $A_FLAG ] && [ -s $S_FLAG ]
+    then
+        list_base_tags
+    else 
+        usage
+    fi
+else
+    if [ -s $A_FLAG ] && [ -s $S_FLAG ]
+    then
+        list_base_tag $1
+    elif [ ! -s $A_FLAG ] && [ ! -s $S_FLAG ]
+    then
+        usage
+    elif [ ! -s $A_FLAG ] && [ -s $S_FLAG ]
+    then
+        git tag $COMMIT_COMMENT -a $(next_tag $1)
+    else
+        git tag $COMMIT_COMMENT -s $(next_tag $1)
+    fi
+fi
+
+
+
