@@ -1,0 +1,62 @@
+#!/bin/bash
+
+validate_base_tag() {
+    if [ -s $1 ]
+    then
+        echo "Please input base tag" >&2
+        exit 1
+    fi
+    
+    TOKEN_COUNT=`echo $1 | awk -F. ' { print NF } '`
+    
+    if [ $TOKEN_COUNT -ne 1 ]
+    then
+        echo 0
+    else
+        echo 1
+    fi
+}
+
+list_base_tags() {
+    git tag | awk -F. ' /[^.]+\.[[:digit:]]+/ && NF == 2 { print $2 OFS $0} ' | sort -k1,1 -rn | cut -d' ' -f2 | awk -F. ' { if (!a[$1]) { a[$1]=$2 } else { a[$1]=a[$1] OFS $2 } } END { for( key in a ) { print key OFS a[key] } }'
+}
+
+list_base_tag() {
+    if [ -s $1 ]
+    then
+        echo "Please input base tag" >&2
+        exit 1
+    fi
+
+    git tag | awk -F. -v base=$1 ' /[^.]+\.[[:digit:]]+/ && NF == 2 && $1 == base { print $2 OFS $0} ' | sort -k1,1 -rn | cut -d' ' -f2 
+}
+
+current_tag() {
+    if [ -s $1 ]
+    then
+        echo "Please input base tag" >&2
+        exit 1
+    fi
+
+    CURR_TAG=$(git tag | awk -F. -v base=$1 ' /[^.]+\.[[:digit:]]+/ && NF == 2 && $1 == base { print $2 OFS $0} ' | sort -k1,1 -rn | cut -d' ' -f2 | head -1)
+    
+    if [ -s $CURR_TAG ]
+    then
+        echo "${1}.0"
+    else
+        echo $CURR_TAG
+    fi
+}
+
+next_tag() {
+    if [ -s $1 ]
+    then
+        echo "Please input base tag" >&2
+        exit 1
+    fi
+
+    current_tag $1 | awk -F. ' { print $1 FS $2+1 } '
+}
+
+
+

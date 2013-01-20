@@ -1,0 +1,29 @@
+#!/bin/bash
+
+curr_pwd=${PWD}
+cd $(dirname $0)
+script_pwd=${PWD}
+cd $curr_pwd
+
+usage() {
+    echo "Options: $(ls $script_pwd/../cmd)"
+    exit 1
+}
+
+if [ $# == 0 ]
+then
+    usage
+fi
+
+COMMAND=$1
+
+if [ -x $script_pwd/../cmd/$COMMAND ]
+then
+    shift
+    $script_pwd/../cmd/$COMMAND $@
+else
+    usage
+fi
+
+
+
